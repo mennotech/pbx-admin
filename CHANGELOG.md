@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Fixed
+
+- Fetch the remote tag object before validating annotated release tags in GitHub Actions.
+
 ## [1.0.0-alpha1] - 2026-08-16
 
 ### Added

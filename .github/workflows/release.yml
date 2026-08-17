@@ -36,7 +36,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git cat-file -t "$GITHUB_REF_NAME")" = tag || {
+          tag_ref="refs/tags/${GITHUB_REF_NAME}"
+          git fetch --force origin "${tag_ref}:${tag_ref}"
+          test "$(git cat-file -t "$tag_ref")" = tag || {
             echo "Release tags must be annotated" >&2
             exit 1
           }
