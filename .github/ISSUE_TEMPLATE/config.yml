@@ -1,0 +1,9 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Support guidance
+    url: https://github.com/mennotech/pbx-admin/blob/main/SUPPORT.md
+    about: Review support scope and the information needed for a useful request.
+  - name: Report a security vulnerability
+    url: https://github.com/mennotech/pbx-admin/security/advisories/new
+    about: >-
+      Report suspected vulnerabilities privately. Do not open a public issue.

@@ -1,0 +1,59 @@
+{% extends "admin_base.html" %}
+{% block title %}Servers · PBX Admin{% endblock %}
+{% block heading %}Servers{% endblock %}
+{% block content %}
+  <div class="card">
+    <h2>Add a server</h2>
+    <form method="post" action="{{ url_for('control.servers_manage') }}">
+      <div class="form-row">
+        <div class="field">
+          <label for="display_name">Display name</label>
+          <input id="display_name" name="display_name" placeholder="KCPA PBX" required />
+        </div>
+        <div class="field">
+          <label for="slug">Slug</label>
+          <input id="slug" name="slug" placeholder="kcpa" pattern="[a-z0-9-]+" required />
+        </div>
+        <div class="field">
+          <label for="upstream_base_url">Upstream base URL</label>
+          <input id="upstream_base_url" name="upstream_base_url"
+                 placeholder="https://pbx-alpha.internal" required />
+        </div>
+      </div>
+      <button class="btn btn-primary" type="submit">Add server</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>All servers</h2>
+    {% if servers %}
+    <table>
+      <thead>
+        <tr><th>Name</th><th>Slug</th><th>Upstream</th><th>State</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for server in servers %}
+        <tr>
+          <td><strong>{{ server['display_name'] }}</strong></td>
+          <td><code>{{ server['slug'] }}</code></td>
+          <td class="hint">{{ server['upstream_base_url'] }}</td>
+          <td>
+            {% if server['enabled'] %}<span class="badge badge-ok">enabled</span>
+            {% else %}<span class="badge badge-muted">disabled</span>{% endif %}
+          </td>
+          <td style="text-align:right">
+            <form class="inline" method="post"
+                  action="{{ url_for('control.servers_delete', server_id=server['id']) }}"
+                  onsubmit="return confirm('Remove {{ server['display_name'] }}? This cannot be undone.');">
+              <button class="btn btn-danger btn-sm" type="submit">Remove</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p class="empty">No servers configured yet.</p>
+    {% endif %}
+  </div>
+{% endblock %}

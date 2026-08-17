@@ -1,0 +1,256 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: 0e2d1aeaf4be4fb8a1bbf5445d2227e0
+      name: Templates/Applications
+  templates:
+    - uuid: 19ccc216a6164f7e8299adccb7acef68
+      template: 'PBX Admin Control Plane'
+      name: 'PBX Admin Control Plane'
+      description: |
+        Monitors the pbx-admin router/control-plane via its /-control/zabbix
+        health endpoint. A single HTTP agent master item polls the JSON document
+        and dependent items extract health + SQLite statistics.
+
+        Set the {$PBXADMIN.URL} macro to the base URL of the deployment, e.g.
+        https://pbx-admin.example.com (no trailing slash). The scraper host must
+        be allowed to bypass Cloudflare Access for the /-control/zabbix path.
+      groups:
+        - name: Templates/Applications
+      items:
+        - uuid: b68be9a16d064e3e867272358943e0cc
+          name: 'PBX Admin: health raw'
+          type: HTTP_AGENT
+          key: pbxadmin.health.raw
+          delay: 1m
+          history: 1h
+          trends: '0'
+          value_type: TEXT
+          description: 'Raw JSON document returned by /-control/zabbix.'
+          url: '{$PBXADMIN.URL}/-control/zabbix'
+          status_codes: '200'
+          timeout: 10s
+          tags:
+            - tag: component
+              value: raw
+          triggers:
+            - uuid: 5fa80363703d4bbf8281c0a599da3782
+              expression: 'nodata(/PBX Admin Control Plane/pbxadmin.health.raw,10m)=1'
+              name: 'PBX Admin: no data from health endpoint'
+              priority: AVERAGE
+              description: 'The /-control/zabbix endpoint has not returned data for 10 minutes.'
+        - uuid: 70465f388ad04cf381f79043b228d113
+          name: 'PBX Admin: service up'
+          type: DEPENDENT
+          key: pbxadmin.up
+          delay: '0'
+          history: 7d
+          trends: 90d
+          value_type: UNSIGNED
+          description: '1 when the app and database are healthy, 0 otherwise.'
+          valuemap:
+            name: 'PBX Admin service state'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.up
+          master_item:
+            key: pbxadmin.health.raw
+          tags:
+            - tag: component
+              value: health
+          triggers:
+            - uuid: d463cee898e546eca8ef9d776da51042
+              expression: 'last(/PBX Admin Control Plane/pbxadmin.up)=0'
+              name: 'PBX Admin: service is down'
+              priority: HIGH
+              description: 'The app or its database reported an unhealthy state.'
+        - uuid: da33a4c419fe43078aa357b5320bddf5
+          name: 'PBX Admin: status'
+          type: DEPENDENT
+          key: pbxadmin.status
+          delay: '0'
+          history: 7d
+          trends: '0'
+          value_type: CHAR
+          description: 'Overall status string: ok or error.'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.status
+          master_item:
+            key: pbxadmin.health.raw
+          tags:
+            - tag: component
+              value: health
+        - uuid: d799ee878ada40f28f919be7a481deca
+          name: 'PBX Admin: servers total'
+          type: DEPENDENT
+          key: pbxadmin.servers.total
+          delay: '0'
+          history: 7d
+          trends: 90d
+          value_type: UNSIGNED
+          description: 'Total number of registered PBX servers.'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.db.servers_total
+          master_item:
+            key: pbxadmin.health.raw
+          tags:
+            - tag: component
+              value: database
+        - uuid: aab9b6bfa2f94fb5831d0d5bd8eb8955
+          name: 'PBX Admin: servers enabled'
+          type: DEPENDENT
+          key: pbxadmin.servers.enabled
+          delay: '0'
+          history: 7d
+          trends: 90d
+          value_type: UNSIGNED
+          description: 'Number of enabled PBX servers.'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.db.servers_enabled
+          master_item:
+            key: pbxadmin.health.raw
+          tags:
+            - tag: component
+              value: database
+          triggers:
+            - uuid: bafb384dc57245a89008555dfc70693b
+              expression: 'last(/PBX Admin Control Plane/pbxadmin.servers.enabled)=0'
+              name: 'PBX Admin: no enabled servers'
+              priority: WARNING
+              description: 'No PBX servers are currently enabled in the registry.'
+        - uuid: c25d87deef304e44a29696f796b1876d
+          name: 'PBX Admin: servers disabled'
+          type: DEPENDENT
+          key: pbxadmin.servers.disabled
+          delay: '0'
+          history: 7d
+          trends: 90d
+          value_type: UNSIGNED
+          description: 'Number of disabled PBX servers.'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.db.servers_disabled
+          master_item:
+            key: pbxadmin.health.raw
+          tags:
+            - tag: component
+              value: database
+        - uuid: 36f8d07039fc4e8b8083778fed7efb1b
+          name: 'PBX Admin: access grants'
+          type: DEPENDENT
+          key: pbxadmin.access.grants
+          delay: '0'
+          history: 7d
+          trends: 90d
+          value_type: UNSIGNED
+          description: 'Rows in user_server_access (user-to-server grants).'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.db.access_grants
+          master_item:
+            key: pbxadmin.health.raw
+          tags:
+            - tag: component
+              value: database
+        - uuid: 0bbfc599ac254b1582cc3d75c7af8c60
+          name: 'PBX Admin: audit events'
+          type: DEPENDENT
+          key: pbxadmin.audit.events
+          delay: '0'
+          history: 7d
+          trends: 90d
+          value_type: UNSIGNED
+          description: 'Total rows in the audit_log table.'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.db.audit_events
+          master_item:
+            key: pbxadmin.health.raw
+          tags:
+            - tag: component
+              value: database
+        - uuid: 5961193235364d7db971a394d3871033
+          name: 'PBX Admin: audit events (24h)'
+          type: DEPENDENT
+          key: pbxadmin.audit.events24h
+          delay: '0'
+          history: 7d
+          trends: 90d
+          value_type: UNSIGNED
+          description: 'Audit-log rows created in the last 24 hours.'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.db.audit_events_24h
+          master_item:
+            key: pbxadmin.health.raw
+          tags:
+            - tag: component
+              value: database
+        - uuid: 4cce16c1de07490da8d1b095f14f6fd4
+          name: 'PBX Admin: database size'
+          type: DEPENDENT
+          key: pbxadmin.db.size
+          delay: '0'
+          history: 7d
+          trends: 90d
+          value_type: UNSIGNED
+          units: B
+          description: 'Size of the SQLite database file in bytes.'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.db.size_bytes
+          master_item:
+            key: pbxadmin.health.raw
+          tags:
+            - tag: component
+              value: database
+        - uuid: 27984dda7e73401b93de2d1db1ef3dea
+          name: 'PBX Admin: uptime'
+          type: DEPENDENT
+          key: pbxadmin.uptime
+          delay: '0'
+          history: 7d
+          trends: 90d
+          value_type: UNSIGNED
+          units: s
+          description: 'Seconds since the worker process started. Resets on restart/reboot.'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.uptime_seconds
+          master_item:
+            key: pbxadmin.health.raw
+          tags:
+            - tag: component
+              value: health
+          triggers:
+            - uuid: 8ef7c41282d247c2a4f43bff003757cf
+              expression: 'last(/PBX Admin Control Plane/pbxadmin.uptime)<10m'
+              name: 'PBX Admin: service restarted (uptime < 10m)'
+              priority: INFO
+              manual_close: 'YES'
+              description: 'The worker process uptime dropped below 10 minutes, indicating a restart, redeploy, or machine reboot.'
+      macros:
+        - macro: '{$PBXADMIN.URL}'
+          value: 'https://pbx-admin.example.com'
+          description: 'Base URL of the pbx-admin deployment, without trailing slash.'
+      valuemaps:
+        - uuid: e3baefa529214f1d959015fb269de048
+          name: 'PBX Admin service state'
+          mappings:
+            - value: '0'
+              newvalue: Down
+            - value: '1'
+              newvalue: Up

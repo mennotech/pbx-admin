@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}PBX Admin Console{% endblock %}
+{% block style %}
+    html, body { margin: 0; height: 100%; font-family: sans-serif; }
+    .topbar {
+      position: fixed; top: 0; left: 0; right: 0; height: 46px;
+      background: #1f2933; color: #fff; display: flex; align-items: center;
+      gap: 0.4rem; padding: 0 0.75rem; box-sizing: border-box; z-index: 2147483647;
+    }
+    .topbar .brand { font-weight: 700; margin-right: 0.5rem; white-space: nowrap; }
+    .topbar form { margin: 0; display: inline; }
+    .topbar .srv {
+      background: #3e4c59; color: #fff; border: 0; border-radius: 5px;
+      padding: 0.35rem 0.7rem; cursor: pointer; font-size: 0.85rem;
+      text-decoration: none; display: inline-block; line-height: 1.2;
+    }
+    .topbar .srv:hover { background: #52606d; }
+    .topbar .srv.active { background: #0a7f2e; cursor: default; pointer-events: none; }
+    .topbar .spacer { flex: 1 1 auto; }
+    .topbar .email { color: #cbd2d9; font-size: 0.8rem; white-space: nowrap; }
+    .topbar a.link { color: #9fb3c8; font-size: 0.8rem; text-decoration: none; }
+    .topbar a.link:hover { text-decoration: underline; }
+    iframe#pbx {
+      position: fixed; top: 46px; left: 0; right: 0; bottom: 0;
+      width: 100%; height: calc(100% - 46px); border: 0;
+    }
+{% endblock %}
+{% block body %}
+  <div class="topbar">
+    <span class="brand">PBX Admin</span>
+    {% for server in servers %}
+      <a class="srv {{ 'active' if server['id']|string == selected|string else '' }}"
+         href="{{ url_for('control.console_view_slug', slug=server['slug']) }}">
+        {{ server['display_name'] }}
+      </a>
+    {% endfor %}
+    <span class="spacer"></span>
+    <span class="email">{{ email }}</span>
+    <a class="link" href="{{ url_for('control.control_home') }}">Router</a>
+  </div>
+  <iframe id="pbx" src="{{ iframe_src }}"></iframe>
+{% endblock %}

@@ -1,0 +1,79 @@
+name: Bug report
+description: Report a reproducible defect in PBX Admin
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Thanks for reporting a bug. Do not include secrets, private
+        infrastructure details, or security vulnerabilities. Report
+        vulnerabilities using the private process in SECURITY.md.
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: >-
+        Provide the release version or full commit SHA where the problem
+        occurs.
+      placeholder: v1.0.0-alpha1 or abc1234
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: >-
+        Include relevant Python, uv, container engine, Fly CLI, browser, and
+        operating system versions.
+      placeholder: Python 3.12; uv 0.x; Podman 5.x; Ubuntu 24.04
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Problem
+      description: Describe what happened and the impact.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: >-
+        Provide the smallest deterministic sequence that reproduces the
+        problem.
+      placeholder: |
+        1. Configure ...
+        2. Run ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: Describe what you expected to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized logs
+      description: >-
+        Paste relevant output after removing credentials, tokens, email
+        addresses, private hosts, and PBX data.
+      render: shell
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched existing issues for this problem.
+          required: true
+        - label: >-
+            I removed all secrets and private operational data.
+          required: true
+        - label: This is not a security vulnerability.
+          required: true

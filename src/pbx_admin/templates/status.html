@@ -1,0 +1,63 @@
+{% extends "admin_base.html" %}
+{% block title %}Status · PBX Admin{% endblock %}
+{% block heading %}Status{% endblock %}
+{% block style %}
+  .status-head { display:flex; align-items:center; gap:.6rem; margin-bottom:.25rem; }
+  .status-head h2 { margin:0; }
+  .meta { color:var(--muted); font-size:.82rem; margin:0 0 1rem; }
+  .metric-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:.75rem; margin:1rem 0 .5rem; }
+  .metric { background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:.65rem .8rem; }
+  .metric .val { font-size:1.4rem; font-weight:700; }
+  .metric .lbl { color:var(--muted); font-size:.78rem; margin-top:.15rem; }
+  .kv { color:var(--muted); font-size:.85rem; }
+  .kv strong { color:var(--ink); }
+{% endblock %}
+{% block content %}
+  <p class="meta">Live reachability &amp; metrics check performed on page load. Not stored &mdash; reload to refresh.</p>
+
+  {% if not servers %}
+    <div class="card"><p class="empty">No servers configured yet.</p></div>
+  {% endif %}
+
+  {% for server in servers %}
+  {% set ms = server['metrics_status'] %}
+  <div class="card">
+    <div class="status-head">
+      <h2>{{ server['display_name'] }}</h2>
+      {% if ms['state'] == 'ok' %}<span class="badge badge-ok">reachable</span>
+      {% elif ms['state'] == 'disabled' %}<span class="badge badge-muted">disabled</span>
+      {% else %}<span class="badge badge-bad">unreachable</span>{% endif %}
+      <code>{{ server['slug'] }}</code>
+    </div>
+
+    {% if ms['state'] == 'ok' and ms['metrics'] %}
+      {% set m = ms['metrics'] %}
+      <p class="kv">
+        {% if m['version'] %}<strong>Asterisk</strong> {{ m['version'] }} &nbsp;·&nbsp; {% endif %}
+        {% if m['uptime'] %}<strong>Uptime</strong> {{ m['uptime'] }} &nbsp;·&nbsp; {% endif %}
+        <strong>{{ m['total_series'] }}</strong> series across
+        <strong>{{ m['metric_names'] }}</strong> metrics
+      </p>
+      {% if m['highlights'] %}
+      <div class="metric-grid">
+        {% for h in m['highlights'] %}
+        <div class="metric">
+          <div class="val">{{ h['value'] }}</div>
+          <div class="lbl">{{ h['label'] }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      <p class="kv">Source: {{ ms['url'] }}</p>
+    {% elif ms['state'] == 'ok' %}
+      <p class="kv">Reachable (HTTP {{ ms['code'] }}), but the metrics payload could not be parsed.</p>
+      <p class="kv">Source: {{ ms['url'] }}</p>
+    {% elif ms['state'] == 'disabled' %}
+      <p class="kv">Metrics checking is disabled. Configured source: {{ ms['url'] }}</p>
+    {% else %}
+      <p class="kv">Unreachable &mdash; {{ ms['message'] }}</p>
+      <p class="kv">Source: {{ ms['url'] }}</p>
+    {% endif %}
+  </div>
+  {% endfor %}
+{% endblock %}

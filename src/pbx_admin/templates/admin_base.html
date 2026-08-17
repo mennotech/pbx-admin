@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}PBX Admin{% endblock %}</title>
+  <style>
+    :root {
+      --bg:#f5f7fa; --panel:#fff; --ink:#1f2933; --muted:#66707a; --line:#e4e7eb;
+      --brand:#2563eb; --ok:#0a7f2e; --warn:#7a5b00; --bad:#b11f1f;
+      --sidebar:#1f2933; --sidebar-ink:#cbd2d9; --sidebar-active:#2563eb;
+    }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+           background:var(--bg); color:var(--ink); }
+    a { color:var(--brand); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    .layout { display:flex; min-height:100vh; }
+
+    /* Sidebar */
+    .sidebar { width:220px; flex-shrink:0; background:var(--sidebar); color:var(--sidebar-ink);
+               display:flex; flex-direction:column; }
+    .sidebar .brand { padding:1rem 1.25rem; font-weight:700; font-size:1.05rem; color:#fff;
+                      border-bottom:1px solid rgba(255,255,255,.08); }
+    .sidebar nav { padding:.5rem 0; display:flex; flex-direction:column; }
+    .sidebar nav a { padding:.65rem 1.25rem; color:var(--sidebar-ink); border-left:3px solid transparent; }
+    .sidebar nav a:hover { background:rgba(255,255,255,.06); text-decoration:none; }
+    .sidebar nav a.active { background:rgba(37,99,235,.15); border-left-color:var(--sidebar-active); color:#fff; }
+    .sidebar .foot { margin-top:auto; padding:1rem 1.25rem; font-size:.75rem; color:#9aa5b1;
+                     border-top:1px solid rgba(255,255,255,.08); }
+
+    /* Content */
+    .content { flex:1; min-width:0; display:flex; flex-direction:column; }
+    .topbar { background:var(--panel); border-bottom:1px solid var(--line);
+              padding:.85rem 1.5rem; display:flex; align-items:center; gap:1rem; }
+    .topbar h1 { margin:0; font-size:1.15rem; }
+    .topbar .spacer { flex:1; }
+    .topbar .user { color:var(--muted); font-size:.85rem; }
+    .main { padding:1.5rem; }
+
+    /* Card */
+    .card { background:var(--panel); border:1px solid var(--line); border-radius:10px;
+            padding:1.25rem; margin-bottom:1.25rem; }
+    .card h2 { margin:0 0 .75rem; font-size:1rem; }
+    .hint { color:var(--muted); font-size:.85rem; }
+
+    /* Table */
+    table { width:100%; border-collapse:collapse; font-size:.9rem; }
+    th, td { text-align:left; padding:.6rem .5rem; border-bottom:1px solid var(--line); vertical-align:middle; }
+    th { color:var(--muted); font-weight:600; font-size:.75rem; text-transform:uppercase; letter-spacing:.03em; }
+    tr:last-child td { border-bottom:0; }
+
+    /* Buttons */
+    .btn { display:inline-block; border:1px solid transparent; border-radius:6px; cursor:pointer;
+           padding:.45rem .8rem; font-size:.85rem; background:#e4e7eb; color:var(--ink); }
+    .btn:hover { filter:brightness(.97); text-decoration:none; }
+    .btn-primary { background:var(--brand); color:#fff; }
+    .btn-danger { background:#fff; color:var(--bad); border-color:#e0b4b4; }
+    .btn-danger:hover { background:#fdf0f0; }
+    .btn-sm { padding:.3rem .6rem; font-size:.8rem; }
+
+    /* Forms */
+    .form-row { display:flex; flex-wrap:wrap; gap:1rem; margin-bottom:1rem; }
+    .field { display:flex; flex-direction:column; gap:.3rem; flex:1; min-width:200px; }
+    .field label { font-size:.8rem; color:var(--muted); }
+    .field input { padding:.5rem .6rem; border:1px solid var(--line); border-radius:6px; font-size:.9rem; }
+
+    /* Badges */
+    .badge { display:inline-block; padding:.2rem .55rem; border-radius:999px; font-size:.78rem; font-weight:600; }
+    .badge-ok { background:#e3f6e9; color:var(--ok); }
+    .badge-warn { background:#fbf3dd; color:var(--warn); }
+    .badge-bad { background:#fbe4e4; color:var(--bad); }
+    .badge-muted { background:#eceff1; color:var(--muted); }
+
+    /* Flash + misc */
+    .flash { padding:.7rem 1rem; border-radius:8px; margin-bottom:1rem; font-size:.9rem; }
+    .flash-success { background:#e3f6e9; color:var(--ok); border:1px solid #b7e2c6; }
+    .flash-error { background:#fbe4e4; color:var(--bad); border:1px solid #e6bcbc; }
+    .empty { color:var(--muted); font-size:.9rem; padding:.5rem 0; }
+    code { background:#eef1f4; padding:.05rem .35rem; border-radius:4px; font-size:.85em; }
+    .inline { display:inline; }
+    {% block style %}{% endblock %}
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">PBX Admin</div>
+      <nav>
+        <a href="{{ url_for('control.control_home') }}" class="{{ 'active' if active == 'dashboard' }}">Dashboard</a>
+        <a href="{{ url_for('control.servers_manage') }}" class="{{ 'active' if active == 'servers' }}">Servers</a>
+        <a href="{{ url_for('control.status_view') }}" class="{{ 'active' if active == 'status' }}">Status</a>
+      </nav>
+      <div class="foot">Signed in as<br /><strong>{{ email }}</strong></div>
+    </aside>
+    <div class="content">
+      <div class="topbar">
+        <h1>{% block heading %}{% endblock %}</h1>
+        <span class="spacer"></span>
+        <span class="user">{{ email }}</span>
+      </div>
+      <main class="main">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% for category, message in messages %}
+            <div class="flash flash-{{ 'error' if category == 'error' else 'success' }}">{{ message }}</div>
+          {% endfor %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+</body>
+</html>

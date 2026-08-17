@@ -1,0 +1,49 @@
+{% extends "admin_base.html" %}
+{% block title %}Dashboard · PBX Admin{% endblock %}
+{% block heading %}Dashboard{% endblock %}
+{% block content %}
+  {% if selected %}
+  <div class="card">
+    <h2>Current selection</h2>
+    <p>Server <strong>{{ selected }}</strong> is selected.
+       <a href="{{ url_for('control.console_view') }}">Open console</a></p>
+    <form method="post" action="{{ url_for('control.clear_server') }}">
+      <button class="btn btn-danger btn-sm" type="submit">Clear selection</button>
+    </form>
+  </div>
+  {% endif %}
+
+  <div class="card">
+    <h2>Your PBX servers</h2>
+    <p class="hint">Select a server to route the console to it, or open its console directly.</p>
+    {% if servers %}
+    <table>
+      <thead>
+        <tr><th>Name</th><th>Upstream</th><th>Slug</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for server in servers %}
+        <tr>
+          <td>
+            <strong>{{ server['display_name'] }}</strong>
+            {% if server['id']|string == selected|string %}<span class="badge badge-ok">selected</span>{% endif %}
+          </td>
+          <td class="hint">{{ server['upstream_base_url'] }}</td>
+          <td><code>{{ server['slug'] }}</code></td>
+          <td style="white-space:nowrap; text-align:right">
+            <a class="btn btn-primary btn-sm" href="{{ url_for('control.console_view_slug', slug=server['slug']) }}">Open console</a>
+            <form class="inline" method="post" action="{{ url_for('control.select_server') }}">
+              <input type="hidden" name="server_id" value="{{ server['id'] }}" />
+              <button class="btn btn-sm" type="submit">Select</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p class="empty">No servers assigned to your identity. Add one under
+        <a href="{{ url_for('control.servers_manage') }}">Servers</a>.</p>
+    {% endif %}
+  </div>
+{% endblock %}

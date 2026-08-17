@@ -1,0 +1,119 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]*.[0-9]*.[0-9]*"
+      - "v[0-9]*.[0-9]*.[0-9]*-*"
+
+permissions:
+  contents: write
+  packages: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Validate and publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out tagged commit
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+        with:
+          version: "0.12.5"
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Verify tag provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git cat-file -t "$GITHUB_REF_NAME")" = tag || {
+            echo "Release tags must be annotated" >&2
+            exit 1
+          }
+          git fetch origin main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main || {
+            echo "Release commit must be contained in main" >&2
+            exit 1
+          }
+
+      - name: Validate and build release
+        run: >-
+          make release-build
+          RELEASE_TAG="${{ github.ref_name }}"
+          CONTAINER_ENGINE=docker
+
+      - name: Log in to GitHub Container Registry
+        shell: bash
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" |
+            docker login ghcr.io \
+              --username "${{ github.actor }}" \
+              --password-stdin
+
+      - name: Publish container image
+        id: image
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=${GITHUB_REF_NAME#v}
+          repository=$(printf '%s' "$GITHUB_REPOSITORY" |
+            tr '[:upper:]' '[:lower:]')
+          registry_image="ghcr.io/${repository}"
+          local_image="pbx-admin:${version}"
+          sha_tag="sha-${GITHUB_SHA::12}"
+
+          docker tag "$local_image" "${registry_image}:${version}"
+          docker tag "$local_image" "${registry_image}:${sha_tag}"
+          docker push "${registry_image}:${version}"
+          docker push "${registry_image}:${sha_tag}"
+
+          if [[ "$version" != *-* ]]; then
+            docker tag "$local_image" "${registry_image}:latest"
+            docker push "${registry_image}:latest"
+          fi
+
+          echo "name=${registry_image}" >> "$GITHUB_OUTPUT"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          uv run python scripts/release_notes.py \
+            "$GITHUB_REF_NAME" > release-notes.md
+
+          release_args=(
+            "$GITHUB_REF_NAME"
+            --verify-tag
+            --title "PBX Admin $GITHUB_REF_NAME"
+            --notes-file release-notes.md
+          )
+          if [[ "$GITHUB_REF_NAME" == *-* ]]; then
+            release_args+=(--prerelease)
+          else
+            release_args+=(--latest)
+          fi
+
+          gh release create "${release_args[@]}"
+
+      - name: Summarize release
+        run: |
+          image="${{ steps.image.outputs.name }}"
+          version="${{ steps.image.outputs.version }}"
+          {
+            echo "### Published ${{ github.ref_name }}"
+            echo "- Image: \`${image}:${version}\`"
+            echo "- Commit image: \`${image}:sha-${GITHUB_SHA::12}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
