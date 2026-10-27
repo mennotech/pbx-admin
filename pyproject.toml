@@ -11,7 +11,7 @@ requires-python = ">=3.12"
 license = "MIT"
 dependencies = [
     "Flask==3.0.3",
-    "gunicorn==26.0.0",
+    "gunicorn==26.1.0",
     "PyJWT[crypto]==2.9.0",
     "requests==2.34.2",
 ]
