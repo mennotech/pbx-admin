@@ -99,7 +99,9 @@ In Cloudflare Zero Trust:
 3. Service type HTTP, URL http://127.0.0.1:8080.
 4. Protect the hostname with Cloudflare Access policy.
 
-This container runs cloudflared when CLOUDFLARED_TOKEN is set.
+This container runs cloudflared when CLOUDFLARED_TOKEN is set. The cloudflared
+version and SHA-256 checksums are pinned in `deploy/Containerfile`; update the
+`CLOUDFLARED_*` build arguments together to upgrade it.
 
 ## Configure PBX registry
 

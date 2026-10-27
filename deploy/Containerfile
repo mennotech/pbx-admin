@@ -19,13 +19,21 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends curl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
+# Pin cloudflared and verify its published SHA-256 so rebuilds are reproducible
+# and security updates are explicit.
+ARG CLOUDFLARED_VERSION=2026.10.5
+ARG CLOUDFLARED_SHA256_AMD64=e1bc0cf084fd9e590554fe769a86b1db46701c3f847a43d902f7b974a4e16298
+ARG CLOUDFLARED_SHA256_ARM64=72e0d05a67e09da87cf495e409a28c3cc5994dd23fc66a982eebea6a55923b7d
+
 RUN case "${TARGETARCH}" in \
-      arm64) CF_ARCH="arm64" ;; \
-      amd64|"") CF_ARCH="amd64" ;; \
+      arm64) CF_ARCH="arm64"; CF_SHA256="${CLOUDFLARED_SHA256_ARM64}" ;; \
+      amd64|"") CF_ARCH="amd64"; CF_SHA256="${CLOUDFLARED_SHA256_AMD64}" ;; \
       *) echo "Unsupported architecture: ${TARGETARCH}" && exit 1 ;; \
     esac \
-    && curl -fsSL "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-${CF_ARCH}" -o /usr/local/bin/cloudflared \
-    && chmod +x /usr/local/bin/cloudflared
+    && curl -fsSL "https://github.com/cloudflare/cloudflared/releases/download/${CLOUDFLARED_VERSION}/cloudflared-linux-${CF_ARCH}" -o /usr/local/bin/cloudflared \
+    && echo "${CF_SHA256}  /usr/local/bin/cloudflared" | sha256sum -c - \
+    && chmod +x /usr/local/bin/cloudflared \
+    && cloudflared --version
 
 COPY resources/sql ./resources/sql
 COPY deploy/wsgi.py deploy/start.sh ./

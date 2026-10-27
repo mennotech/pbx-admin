@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [1.0.0-alpha2] - 2026-10-27
+
+### Security
+
+- Pin cloudflared to 2026.10.5 with SHA-256 verification so container rebuilds pick up the certificate revocation update instead of a cached `latest` download.
+
 ### Fixed
 
 - Fetch the remote tag object before validating annotated release tags in GitHub Actions.
@@ -18,5 +24,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Make-based development, test, container build, and Fly.io deployment workflows.
 - uv-managed Python 3.12 environment and locked dependencies.
 
-[Unreleased]: https://github.com/mennotech/pbx-admin/compare/v1.0.0-alpha1...HEAD
+[Unreleased]: https://github.com/mennotech/pbx-admin/compare/v1.0.0-alpha2...HEAD
+[1.0.0-alpha2]: https://github.com/mennotech/pbx-admin/compare/v1.0.0-alpha1...v1.0.0-alpha2
 [1.0.0-alpha1]: https://github.com/mennotech/pbx-admin/releases/tag/v1.0.0-alpha1

@@ -448,7 +448,7 @@ wheels = [
 
 [[package]]
 name = "pbx-admin"
-version = "1.0.0a1"
+version = "1.0.0a2"
 source = { editable = "." }
 dependencies = [
     { name = "flask" },
